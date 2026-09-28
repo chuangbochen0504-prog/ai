@@ -1,5 +1,3 @@
 my-backend/
-├── main.py              # FastAPI 主程式
-├── requirements.txt     # Python 相依套件清單
-├── Dockerfile           # (推薦) 定義部署環境
-└── face_landmarker.task # MediaPipe 模型檔
+├── main.py
+├── requirements.txt
