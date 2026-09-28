@@ -5,4 +5,5 @@ mediapipe
 pillow
 numpy
 opencv-python-headless
-gTTS
+torch --extra-index-url https://download.pytorch.org/whl/cpu
+transformers
