@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 駕駛疲勞監控測試</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #121212; color: #fff; padding: 20px; }
+        video { width: 100%; max-width: 400px; border-radius: 12px; transform: scaleX(-1); }
+        #status { font-size: 1.2rem; font-weight: bold; margin: 15px 0; color: #00ff88; }
+        #alert { font-size: 1.1rem; color: #ff4d4d; min-height: 30px; }
+    </style>
+</head>
+<body>
+    <h2>AI 駕駛疲勞監控系統</h2>
+    <video id="video" autoplay playsinline muted></video>
+    <p id="status">狀態：連線中...</p>
+    <p id="alert"></p>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const statusText = document.getElementById('status');
+        const alertText = document.getElementById('alert');
+        
+        // 建立 WebSocket 連線
+        const ws = new WebSocket("wss://my-driver-ai-backend.onrender.com/ws/monitor");
+
+        ws.onopen = () => {
+            statusText.innerText = "狀態：已成功連線至雲端 AI！";
+            startCamera();
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.alert_text) {
+                alertText.innerText = "⚠️ 警告：" + data.alert_text;
+            } else {
+                alertText.innerText = "";
+            }
+        };
+
+        ws.onclose = () => { statusText.innerText = "狀態：連線已中斷"; };
+
+        // 開啟手機鏡頭
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user", width: 320, height: 240 } 
+                });
+                video.srcObject = stream;
+                
+                // 定時截圖並傳送（每秒 5 幀）
+                setInterval(sendFrame, 200);
+            } catch (err) {
+                statusText.innerText = "無法存取鏡頭，請確認權限設定。";
+            }
+        }
+
+        function sendFrame() {
+            if (ws.readyState !== WebSocket.OPEN) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            const base64Image = canvas.toDataURL('image/jpeg', 0.5);
+            ws.send(base64Image);
+        }
+    </script>
+</body>
+</html>
